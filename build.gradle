@@ -172,7 +172,6 @@ tasks.register("git"){
     exec {
         commandLine 'cmd', '/c', 'git', 'add', '.'
     }
-
     exec {
         commandLine 'cmd', '/c', 'git', 'commit', '-m', 'Add test reports'
     }
