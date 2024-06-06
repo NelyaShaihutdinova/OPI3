@@ -115,7 +115,8 @@ tasks.register('validateXml') {
 }
 import org.gradle.api.tasks.Exec
 
-task diffAndCommit {
+tasks.register('diffAndCommit') {
+    group 'OPI'
     doLast {
         // Чтение списка классов из файла параметров
         def classListFile = file('class-list.txt')
@@ -137,11 +138,10 @@ task diffAndCommit {
             println "Found changes in relevant classes: ${relevantChanges}"
 
             // Добавляем изменения в индекс
-            "git add .".execute().waitFor()
-
+            exec { commandLine 'cmd', "git add ." }
             // Коммитим изменения
             def commitMessage = "Auto-commit changes in relevant classes"
-            "git commit -m '${commitMessage}'".execute().waitFor()
+            exec { commandLine 'cmd', "git commit -m some change"}
 
             println "Changes committed successfully."
         } else {
