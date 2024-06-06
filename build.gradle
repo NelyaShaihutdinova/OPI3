@@ -141,7 +141,12 @@ tasks.register('diffAndCommit') {
             exec { commandLine 'cmd', "git add ." }
             // Коммитим изменения
             def commitMessage = "Auto-commit changes in relevant classes"
-            exec { commandLine 'cmd', "git commit -m some change"}
+            exec {
+                commandLine 'cmd', 'git', 'commit', '-m', 'some change'
+            }
+            exec {
+                commandLine 'cmd', 'git push'
+            }
 
             println "Changes committed successfully."
         } else {
@@ -162,3 +167,15 @@ tasks.register('diffAndCommit') {
 //        commandLine 'cmd', '/c', 'C:\\Users\\nikitosek\\wildfly-29.0.1.Final\\bin\\standalone.bat'
 //    }
 //}
+tasks.register("git"){
+    exec {
+        commandLine 'cmd', '/c', 'git', 'add', '.'
+    }
+
+    exec {
+        commandLine 'cmd', '/c', 'git', 'commit', '-m', 'Add test reports'
+    }
+    exec {
+        commandLine 'cmd', '/c', 'git', 'push'
+    }
+}

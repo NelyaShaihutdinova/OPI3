@@ -80,9 +80,5 @@ public class ManagerDB implements Serializable {
             throw new RuntimeException(e);
         }
     }
-
-
-
-
-
+    public void pass(){}
 }
