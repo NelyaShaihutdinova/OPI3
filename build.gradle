@@ -138,14 +138,14 @@ tasks.register('diffAndCommit') {
             println "Found changes in relevant classes: ${relevantChanges}"
 
             // Добавляем изменения в индекс
-            exec { commandLine 'cmd', "git add ." }
-            // Коммитим изменения
-            def commitMessage = "Auto-commit changes in relevant classes"
             exec {
-                commandLine 'cmd', 'git', 'commit', '-m', 'some change'
+                commandLine 'cmd', '/c', 'git', 'add', '.'
             }
             exec {
-                commandLine 'cmd', 'git push'
+                commandLine 'cmd', '/c', 'git', 'commit', '-m', 'some change'
+            }
+            exec {
+                commandLine 'cmd', '/c', 'git', 'push'
             }
 
             println "Changes committed successfully."
@@ -169,13 +169,5 @@ tasks.register('diffAndCommit') {
 //}
 tasks.register("git"){
     group "OPI"
-    exec {
-        commandLine 'cmd', '/c', 'git', 'add', '.'
-    }
-    exec {
-        commandLine 'cmd', '/c', 'git', 'commit', '-m', 'Add test reports'
-    }
-    exec {
-        commandLine 'cmd', '/c', 'git', 'push'
-    }
+
 }
