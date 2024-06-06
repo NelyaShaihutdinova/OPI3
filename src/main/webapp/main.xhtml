@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="http://xmlns.jcp.org/jsf/html"
+      xmlns:f="http://xmlns.jcp.org/jsf/core"
+      xmlns:p="http://primefaces.org/ui" xmlns:a="http://java.sun.com/jsf/facelets"
+>
+<h:head>
+    <title>Web3</title>
+    <link href="./resources/css/main.css" rel="stylesheet"/>
+</h:head>
+
+<h:body class="body">
+    <div class="container">
+        <div class="header">
+            <a>Шайхутдинова Нэля Вилевна P3208</a>
+            <a>Вариант: 45135</a>
+        </div>
+        <div class="general">
+            <canvas id="graph" width="400" height="400"></canvas>
+            <h:form id="form" styleClass="coordinates-form">
+                <h5 class="label">X: <span id="xCoordinate"></span></h5>
+                <h:panelGrid columns="1">
+                    <h:inputHidden id="x" value="#{point.x}"/>
+                    <p:selectOneMenu for="x" display="x_out" value="#{point.x}">
+                        <f:selectItem itemLabel="-5" itemValue="-5"/>
+                        <f:selectItem itemLabel="-4" itemValue="-4"/>
+                        <f:selectItem itemLabel="-3" itemValue="-3"/>
+                        <f:selectItem itemLabel="-2" itemValue="-2"/>
+                        <f:selectItem itemLabel="-1" itemValue="-1"/>
+                        <f:selectItem itemLabel="0" itemValue="0"/>
+                        <f:selectItem itemLabel="1" itemValue="1"/>
+                        <f:selectItem itemLabel="2" itemValue="2"/>
+                        <f:selectItem itemLabel="3" itemValue="3"/>
+                    </p:selectOneMenu>
+                </h:panelGrid>
+
+                <h5 class="label">Y: <span id="yCoordinate"></span></h5>
+                <h:panelGrid columns="1">
+                    <p:inputText name="y" id="y" value="#{point.y}" a:placeholder="(-3;3)"><f:validateDoubleRange minimum="-3" maximum="3"/></p:inputText></h:panelGrid>
+
+                <h5>R: <span id="rCoordinate"></span></h5>
+                <h:panelGrid columns="1">
+                    <p:selectOneRadio id="r" value="#{point.r}">
+                        <f:selectItem itemValue="1" itemLabel="1"/>
+                        <f:selectItem itemValue="2" itemLabel="2"/>
+                        <f:selectItem itemValue="3" itemLabel="3"/>
+                        <f:selectItem itemValue="4" itemLabel="4"/>
+                        <f:selectItem itemValue="5" itemLabel="5"/>
+                        <p:ajax update="redrawGraph redrawPoints"/>
+                    </p:selectOneRadio>
+                </h:panelGrid>
+
+                <p:commandButton ajax="true" style="margin: 10px" id="submit" value="Отправить"
+                                 action="#{manager.addPointToTable(point)}"
+                                 update="@form result redrawPoints"/>
+                <h:button class="btn" value="Начальная страница" outcome="go-index"/>
+            </h:form>
+        </div>
+        <div class="result_width">
+            <div class="results">
+                <p:dataTable class="table" id="result" value="#{pointsList}" var="item"
+                             style="width: 100%; border-width:2px; margin: 0 auto; border-color:black; border-style:solid;">
+                    <p:column headerText="X">
+                        <h:outputText value="#{item.x}">
+                            <f:convertNumber type="number"
+                                             maxFractionDigits="3"
+                                             groupingUsed="false"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="Y">
+                        <h:outputText value="#{item.y}">
+                            <f:convertNumber type="number"
+                                             maxFractionDigits="3"
+                                             groupingUsed="false"/>
+                        </h:outputText>
+                    </p:column>
+                    <p:column headerText="R">
+                        <h:outputText value="#{item.r}"/>
+                    </p:column>
+                    <p:column headerText="Result">
+                        <h:outputText value="#{item.result ? 'True' : 'False' }"/>
+                    </p:column>
+                </p:dataTable>
+            </div>
+        </div>
+
+    </div>
+    <h:outputScript name="js/graphElement.js"/>
+</h:body>
+<h:panelGroup id="redrawGraph">
+    <h:outputScript>
+        window.redrawGraph(#{point.r});
+    </h:outputScript>
+</h:panelGroup>
+<h:panelGroup id="redrawPoints">
+    <h:outputScript>
+        window.redrawPoints();
+    </h:outputScript>
+</h:panelGroup>
+<p:remoteCommand name="addPoint" action="#{manager.addPointToTableFromJSON()}" update="result"
+                 process="@this" oncomplete=""/>
+</html>

@@ -1,0 +1,164 @@
+import javax.xml.transform.stream.StreamSource
+import javax.xml.validation.SchemaFactory
+
+plugins {
+    id 'java'
+    id 'war'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+repositories {
+    mavenCentral()
+}
+
+ext {
+    junitVersion = '5.9.2'
+}
+
+
+dependencies {
+    compileOnly('jakarta.enterprise:jakarta.enterprise.cdi-api:4.0.1')
+    compileOnly('jakarta.validation:jakarta.validation-api:3.0.2')
+    implementation group: 'jakarta.faces', name: 'jakarta.faces-api', version: '4.0.1'
+    compileOnly('jakarta.servlet:jakarta.servlet-api:6.0.0')
+    implementation group: 'jakarta.persistence', name: 'jakarta.persistence-api', version: '3.1.0'
+    compileOnly('jakarta.platform:jakarta.jakartaee-web-api:9.0.0')
+    implementation('org.primefaces:primefaces:13.0.0:jakarta')
+
+    compileOnly('jakarta.ws.rs:jakarta.ws.rs-api:3.1.0')
+    implementation group: 'jakarta.annotation', name: 'jakarta.annotation-api', version: '2.1.1'
+    implementation group: 'jakarta.xml.bind', name: 'jakarta.xml.bind-api', version: '4.0.0'
+    implementation 'org.postgresql:postgresql:42.2.27'
+    compileOnly('org.projectlombok:lombok:1.18.26')
+    annotationProcessor('org.projectlombok:lombok:1.18.26')
+    testCompileOnly('org.projectlombok:lombok:1.18.26')
+    testAnnotationProcessor('org.projectlombok:lombok:1.18.26')
+    implementation 'org.postgresql:postgresql:42.2.27'
+    compileOnly('jakarta.ejb:jakarta.ejb-api:4.0.1') //
+
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-console-standalone:1.10.2'
+}
+
+def srcDirMain = "${projectDir.path}/src/main"
+def outputArtefactsDir = "${buildDir}/libs"
+def compiledMain = "${buildDir}/classes/java/main"
+def warAssemblingDir = "${buildDir}/war-tmp"
+def mainSourceSet = sourceSets.main
+
+
+tasks.register('CompileOPI') {
+    group = 'OPI'
+    exec {
+        commandLine 'cmd', '/c', 'gradlew', 'compileJava'
+    }
+    doLast {
+        mkdir(warAssemblingDir)
+        copy {
+            into("${warAssemblingDir}/WEB-INF")
+            from("${srcDirMain}/webapp/WEB-INF/faces-config.xml")
+            from("${srcDirMain}/webapp/WEB-INF/web.xml")
+            from("${srcDirMain}/webapp/WEB-INF/beans.xml")
+            from("${compiledMain}") { into("classes") }
+            from(mainSourceSet.runtimeClasspath) { into('lib') include('*.jar') }
+        }
+
+        copy {
+            from("${srcDirMain}/webapp/resources")
+            into("${warAssemblingDir}/resources")
+        }
+        copy {
+            from("${srcDirMain}/webapp/layout")
+            into("${warAssemblingDir}/layout")
+        }
+        copy {
+            into(warAssemblingDir)
+            from("${srcDirMain}/webapp/index.xhtml")
+            from("${srcDirMain}/webapp/main.xhtml")
+        }
+    }
+}
+tasks.register('BuildOPI', Exec) {
+    group = 'OPI'
+    dependsOn CompileOPI
+    mkdir(outputArtefactsDir)
+    commandLine 'jar', '-cf', "${outputArtefactsDir}/${project.name}.war", '-C', warAssemblingDir, '.'
+}
+tasks.register("cleanOPI") {
+    group = 'OPI'
+    delete rootProject.buildDir
+}
+tasks.register("testOPI", Test) {
+    group = 'OPI'
+    useJUnitPlatform()
+}
+tasks.register('validateXml') {
+    group = 'OPI'
+    doLast {
+        fileTree('src/main').include('**/*.xml').each { file ->
+            def schemaFactory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema")
+            def schema = schemaFactory.newSchema()
+            def validator = schema.newValidator()
+            try {
+                validator.validate(new StreamSource(file as File))
+                println "${file} is valid."
+            } catch (Exception e) {
+                println "${file} is not valid because ${e.message}"
+            }
+        }
+    }
+}
+import org.gradle.api.tasks.Exec
+
+task diffAndCommit {
+    doLast {
+        // Чтение списка классов из файла параметров
+        def classListFile = file('class-list.txt')
+        def classList = classListFile.readLines()
+
+        // Получение изменений в рабочей копии
+        def gitDiff = "git diff --name-only".execute().text.trim()
+        def changedFiles = gitDiff.split('\n')
+
+        // Проверка, касаются ли изменения указанных классов
+        def relevantChanges = changedFiles.findAll { changedFile ->
+            classList.any { className ->
+                changedFile.contains(className)
+            }
+        }
+
+        // Если есть изменения, касающиеся указанных классов, выполнить commit
+        if (!relevantChanges.isEmpty()) {
+            println "Found changes in relevant classes: ${relevantChanges}"
+
+            // Добавляем изменения в индекс
+            "git add .".execute().waitFor()
+
+            // Коммитим изменения
+            def commitMessage = "Auto-commit changes in relevant classes"
+            "git commit -m '${commitMessage}'".execute().waitFor()
+
+            println "Changes committed successfully."
+        } else {
+            println "No changes in relevant classes."
+        }
+    }
+}
+
+//tasks.register('env') {
+//    group = 'OPI'
+//    dependsOn build
+//    copy {
+//        from("${buildDir}/libs/")
+//        into("C:\\Users\\nikitosek\\wildfly-29.0.1.Final\\standalone\\deployments\\")
+//    }
+//    exec {
+//        environment 'JAVA_OPTS', '-Xms256m -Xmx1024m'
+//        commandLine 'cmd', '/c', 'C:\\Users\\nikitosek\\wildfly-29.0.1.Final\\bin\\standalone.bat'
+//    }
+//}
